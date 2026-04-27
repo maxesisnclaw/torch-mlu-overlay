@@ -19,7 +19,7 @@
 （如 `cambricon-base/pytorch:v25.01-torch2.5.0-torchmlu1.24.1-ubuntu22.04-py310`），
 本 overlay 在其之上叠加我们的修改。
 
-完整 IP / 来源声明详见 [`DISCLAIMER.md`](DISCLAIMER.md)。
+完整 IP / 来源声明详见 [`DISCLAIMER.md`](DISCLAIMER.md)，路线图详见 [`ROADMAP.md`](ROADMAP.md)。
 
 ## 为什么有这个项目
 
@@ -78,7 +78,6 @@ python tests/smoke_batch_matmul.py
 | `torch_mlu_ops.batch_matmul` vs `torch.bmm` | ✅ max diff 0（fp16, B=4） |
 | YOLOv8n 推理（Ultralytics） | ✅ 检测结果与 CPU 基线一致，5.6× 加速 |
 | `torch.compile` block-ptr 路径 | 🔴 v0.1 暂禁用，v0.2 重新启用 |
-| vllm-mlu OOT plugin | 🔴 Phase 3 单独里程碑 |
 
 ## 反馈渠道
 

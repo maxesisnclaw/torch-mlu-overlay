@@ -24,8 +24,6 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Known limitations
 - 🔴 `torch.compile` block-ptr code path is disabled in this release;
   re-enabling is tracked for v0.2.
-- 🔴 `vllm-mlu` OOT plugin path is out of scope; tracked as a separate
-  Phase 3 deliverable.
 - 🟡 Full op-coverage test suite is in-flight at release time; see
   release notes for the snapshot pass/fail grid.
 
