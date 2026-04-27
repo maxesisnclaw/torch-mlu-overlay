@@ -96,6 +96,7 @@ jobs:
           cp -r public/tests   out/tests
           cp -r public/docs    out/docs        2>/dev/null || true
           cp public/README.md       out/
+          cp public/README.EN.md    out/
           cp public/DISCLAIMER.md   out/
           cp public/COMPATIBILITY.md out/
           cp public/CHANGELOG.md    out/
