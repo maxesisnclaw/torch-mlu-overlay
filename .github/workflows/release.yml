@@ -1,0 +1,156 @@
+name: Build & publish overlay release
+
+# Triggers:
+#   - Push a tag like v0.1.0 → CI generates patches and creates a Release.
+#   - Manual dispatch with a tag name input → same flow.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.1.0). Will be used to label both source repos.'
+        required: true
+        type: string
+
+permissions:
+  contents: write   # public repo: needed to create the Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # CROSS_REPO_PAT must be set in repo secrets. fine-grained PAT
+      # with read access to:
+      #   - maxesisnclaw/torch_mlu-mlu370
+      #   - maxesisnclaw/torch_mlu_ops-mlu370
+      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
+      RELEASE_TAG:    ${{ github.event.inputs.tag || github.ref_name }}
+      BASELINE_BRANCH: mlu370-maintain
+      OVERLAY_BRANCH:  torch2.10/v0.1
+
+    steps:
+      - name: Check out public repo (this one)
+        uses: actions/checkout@v4
+        with:
+          path: public
+
+      - name: Verify CROSS_REPO_PAT is set
+        run: |
+          if [ -z "$CROSS_REPO_PAT" ]; then
+            echo "::error::secret CROSS_REPO_PAT is not configured."
+            echo "Set it in repo Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Clone torch_mlu-mlu370 (private)
+        uses: actions/checkout@v4
+        with:
+          repository: maxesisnclaw/torch_mlu-mlu370
+          ref: ${{ env.OVERLAY_BRANCH }}
+          token: ${{ secrets.CROSS_REPO_PAT }}
+          path: torch_mlu_src
+          fetch-depth: 0
+
+      - name: Clone torch_mlu_ops-mlu370 (private)
+        uses: actions/checkout@v4
+        with:
+          repository: maxesisnclaw/torch_mlu_ops-mlu370
+          ref: ${{ env.OVERLAY_BRANCH }}
+          token: ${{ secrets.CROSS_REPO_PAT }}
+          path: torch_mlu_ops_src
+          fetch-depth: 0
+
+      - name: Fetch baseline branches in both clones
+        run: |
+          (cd torch_mlu_src && git fetch origin "$BASELINE_BRANCH:$BASELINE_BRANCH")
+          (cd torch_mlu_ops_src && git fetch origin "$BASELINE_BRANCH:$BASELINE_BRANCH")
+
+      - name: Generate patches
+        run: |
+          mkdir -p out/patches/torch_mlu out/patches/torch_mlu_ops
+
+          (cd torch_mlu_src && \
+            git format-patch \
+              --keep-subject \
+              --no-numbered \
+              "$BASELINE_BRANCH..HEAD" \
+              -o ../out/patches/torch_mlu)
+
+          (cd torch_mlu_ops_src && \
+            git format-patch \
+              --keep-subject \
+              --no-numbered \
+              "$BASELINE_BRANCH..HEAD" \
+              -o ../out/patches/torch_mlu_ops)
+
+          echo "==> torch_mlu patches:"
+          ls -la out/patches/torch_mlu
+          echo "==> torch_mlu_ops patches:"
+          ls -la out/patches/torch_mlu_ops
+
+      - name: Pack release tarball
+        run: |
+          cp -r public/scripts out/scripts
+          cp -r public/tests   out/tests
+          cp -r public/docs    out/docs        2>/dev/null || true
+          cp public/README.md       out/
+          cp public/DISCLAIMER.md   out/
+          cp public/COMPATIBILITY.md out/
+          cp public/CHANGELOG.md    out/
+          cp public/LICENSE         out/
+
+          # Embed source-of-truth pointers (sha7) for traceability
+          cat > out/PROVENANCE.txt <<PROV
+          Built by GitHub Actions for tag: ${RELEASE_TAG}
+          torch_mlu-mlu370       overlay sha: $(cd torch_mlu_src && git rev-parse --short HEAD)
+          torch_mlu-mlu370      baseline sha: $(cd torch_mlu_src && git rev-parse --short "$BASELINE_BRANCH")
+          torch_mlu_ops-mlu370   overlay sha: $(cd torch_mlu_ops_src && git rev-parse --short HEAD)
+          torch_mlu_ops-mlu370  baseline sha: $(cd torch_mlu_ops_src && git rev-parse --short "$BASELINE_BRANCH")
+          Built at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          PROV
+
+          (cd out && tar czf ../release.tar.gz .)
+          ls -la release.tar.gz
+          tar tzf release.tar.gz | head -30
+
+      - name: Generate release notes
+        run: |
+          cat > release_notes.md <<MARKDOWN
+          ## torch-mlu-overlay ${RELEASE_TAG}
+
+          Apply this overlay on top of a Cambricon \`torch 2.5\` base image
+          to get a working \`torch 2.10\` MLU370 stack. See [\`README.md\`](https://github.com/maxesisnclaw/torch-mlu-overlay/blob/main/README.md)
+          for usage and [\`DISCLAIMER.md\`](https://github.com/maxesisnclaw/torch-mlu-overlay/blob/main/DISCLAIMER.md)
+          for IP boundaries.
+
+          ### Quick start
+
+          \`\`\`bash
+          curl -L -o overlay.tar.gz https://github.com/maxesisnclaw/torch-mlu-overlay/releases/download/${RELEASE_TAG}/release.tar.gz
+          tar xzf overlay.tar.gz && bash scripts/apply.sh
+          \`\`\`
+
+          ### Provenance
+
+          $(cat out/PROVENANCE.txt | sed 's/^/    /')
+
+          ### Patch summary
+
+          - \`torch_mlu\`:     $(ls out/patches/torch_mlu | wc -l) commits / $(cat out/patches/torch_mlu/*.patch 2>/dev/null | grep -c '^---' || echo 0) files touched
+          - \`torch_mlu_ops\`: $(ls out/patches/torch_mlu_ops | wc -l) commits / $(cat out/patches/torch_mlu_ops/*.patch 2>/dev/null | grep -c '^---' || echo 0) files touched
+
+          See [\`CHANGELOG.md\`](https://github.com/maxesisnclaw/torch-mlu-overlay/blob/main/CHANGELOG.md) for the full release log.
+          MARKDOWN
+          cat release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name:    ${{ env.RELEASE_TAG }}
+          name:        torch-mlu-overlay ${{ env.RELEASE_TAG }}
+          body_path:   release_notes.md
+          files:       release.tar.gz
+          draft:       false
+          prerelease:  ${{ contains(env.RELEASE_TAG, 'rc') || contains(env.RELEASE_TAG, 'beta') }}
