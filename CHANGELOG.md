@@ -21,10 +21,19 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - ✅ `torch_mlu_ops.batch_matmul` vs `torch.bmm`: max abs diff 0 (fp16, B=4).
 - ✅ YOLOv8n inference: detections match CPU baseline; 5.6× speedup.
 
+### Test coverage
+- File-level pass: **300 / 347 (86%)**
+- Test-case-level pass: **~97%**
+- See [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) for the breakdown of the
+  47 non-passing files (6 of which are environment / missing optional
+  deps, not real regressions).
+
 ### Known limitations
 - 🔴 `torch.compile` block-ptr code path is disabled in this release;
   re-enabling is tracked for v0.2.
-- 🟡 Full op-coverage test suite is in-flight at release time; see
-  release notes for the snapshot pass/fail grid.
+- 🟡 `torch 2.10` profiler subsystem rewrite means Cambricon's profiler
+  bridge needs full re-adapt; tracked for v0.3.
+- 🟡 `_MultiProcessingDataLoaderIter._in_order` / `foreach` / various
+  MLU runtime corner-case tests still fail; tracked for v0.1.x.
 
 [v0.1.0]: https://github.com/maxesisnclaw/torch-mlu-overlay/releases/tag/v0.1.0

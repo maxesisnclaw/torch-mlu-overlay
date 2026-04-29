@@ -101,6 +101,7 @@ jobs:
           cp public/COMPATIBILITY.md out/
           cp public/CHANGELOG.md    out/
           cp public/ROADMAP.md      out/
+          cp public/KNOWN_ISSUES.md out/
           cp public/LICENSE         out/
 
           # Embed source-of-truth pointers (sha7) for traceability

@@ -22,7 +22,8 @@ your machine (e.g. `cambricon-base/pytorch:v25.01-torch2.5.0-torchmlu1.24.1-ubun
 The overlay applies our patches on top of that image.
 
 See [`DISCLAIMER.md`](DISCLAIMER.md) for the full IP / provenance
-statement, and [`ROADMAP.md`](ROADMAP.md) for the project roadmap.
+statement, [`ROADMAP.md`](ROADMAP.md) for the project roadmap, and
+[`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) for known v0.1.0 limitations.
 
 > 中文版见 [`README.md`](README.md)。
 
@@ -84,7 +85,7 @@ the backup created in step 2.
 | Workload | Status |
 |---|---|
 | `torch.mlu.is_available()` + device probe | ✅ |
-| Basic ops (`torch.bmm`, `aten` suite) | ✅ (377-file op suite, see Releases) |
+| Basic ops (`torch.bmm`, `aten` suite) | ✅ 86% file-level / ~97% test-level — see [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) |
 | `torch_mlu_ops.batch_matmul` vs `torch.bmm` | ✅ max diff 0 (fp16, B=4) |
 | YOLOv8n inference (Ultralytics) | ✅ matches CPU detections, 5.6× speedup |
 | `torch.compile` block-ptr path | 🔴 disabled in v0.1 (deferred to v0.2) |

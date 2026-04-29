@@ -44,8 +44,27 @@ Cambricon's `torch_mlu/utils/gpu_migration/` overrides for FSDP2 have
 been adapted to the new torch 2.10 module layout but **have not been
 exercised** under v0.1. We expect potential issues here.
 
-## Op-coverage snapshot
+## Op-coverage snapshot (v0.1.0)
 
-The full Cambricon op test suite (`test/torch_ops/*`, ~377 files) was
-running at the time of this release. The pass/fail snapshot is
-attached to the GitHub Release as `op-coverage-v0.1.0.txt`.
+The full Cambricon op test suite was run end-to-end on this overlay:
+
+| Category | Files | All-pass | With FAIL/ERR | TIMEOUT |
+|---|---:|---:|---:|---:|
+| `torch_ops` (core kernels) | 259 | 247 | 7 | 5 |
+| `mlu` (runtime integration) | 12 | 6 | 6 | 0 |
+| `inductor` | 4 | 2 | 1 | 1 |
+| `profiler` | 11 | 3 | 8 | 0 |
+| `test_foreach_op` | 5 | 0 | 5 | 0 |
+| `custom_ops` | 19 | 14 | 5 | 0 |
+| `torch` | 6 | 2 | 4 | 0 |
+| `cpp_extension` / `multiprocessing` / `utils` / `distributed` etc. | 31 | 26 | 5 | 0 |
+| **Total** | **347** | **300 (86%)** | **41** | **6** |
+
+Test-case-level pass rate (counting individual test methods, not files)
+is approximately **97%**. Of the 41 FAIL/ERR files, **6 are missing
+optional dependencies** (`torchvision` / `torchaudio`)—not real
+regressions; install the matching CPU wheels and they pass.
+
+See [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) for the full breakdown of
+the 47 non-passing files, root cause per file, and which release
+each fix is targeted for.
