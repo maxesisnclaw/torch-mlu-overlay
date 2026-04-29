@@ -4,7 +4,35 @@ All notable changes to `torch-mlu-overlay` will be documented in this file.
 The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v0.1.0] — 2026-04-27 (planned)
+## [v0.1.1] — 2026-04-29
+
+### Fixed
+- `torch/test_dataloader` + `torch/test_pin_memory`:
+  initialize `self._in_order` in `_BaseDataLoaderIter` to track
+  torch 2.10's new `DataLoader.in_order` parameter.
+- `torch_mlu/utils/gpu_migration/migration.py`:
+  point at `torch.distributed.fsdp._fully_shard._fsdp_param.FSDPParam`
+  instead of the removed `torch.distributed._composable.fsdp` path
+  (FSDP2 was relocated in torch 2.10).
+- 6 op-test `assertRaisesRegex` patterns loosened to accept both the
+  legacy torch 2.5 wording and the new torch 2.10 wording:
+  `test_slice`, `test_softshrink`, `test_topk`, `test_gather`,
+  `test_dot`, `test_sparse_coo_tensor` — the underlying op kernels
+  themselves are unchanged.
+
+### Test pass rate (file-level, full suite re-run pending)
+- v0.1.0:  300 / 347  (86%)
+- v0.1.1:  308 / 347  (89%)  — 8 file-level fixes from the above
+
+### Still open in v0.1.x
+See [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md). Highest-leverage remaining
+items: foreach kernel registration (5 files at once), MLU runtime
+corner cases (test_event / test_caching_allocator), 5 op-level
+TIMEOUTs.
+
+[v0.1.1]: https://github.com/maxesisnclaw/torch-mlu-overlay/releases/tag/v0.1.1
+
+## [v0.1.0] — 2026-04-29
 
 ### Added
 - Initial public release.

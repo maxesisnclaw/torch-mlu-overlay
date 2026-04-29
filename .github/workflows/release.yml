@@ -28,7 +28,11 @@ jobs:
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
       RELEASE_TAG:    ${{ github.event.inputs.tag || github.ref_name }}
       BASELINE_BRANCH: mlu370-maintain
-      OVERLAY_BRANCH:  torch2.10/v0.1
+      # Per-repo overlay branches. torch_mlu may move forward
+      # (v0.1, v0.1.1, ...) while torch_mlu_ops stays pinned until
+      # a new build is needed.
+      TORCH_MLU_OVERLAY_BRANCH:     torch2.10/v0.1.1
+      TORCH_MLU_OPS_OVERLAY_BRANCH: torch2.10/v0.1
 
     steps:
       - name: Check out public repo (this one)
@@ -48,7 +52,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: maxesisnclaw/torch_mlu-mlu370
-          ref: ${{ env.OVERLAY_BRANCH }}
+          ref: ${{ env.TORCH_MLU_OVERLAY_BRANCH }}
           token: ${{ secrets.CROSS_REPO_PAT }}
           path: torch_mlu_src
           fetch-depth: 0
@@ -57,7 +61,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: maxesisnclaw/torch_mlu_ops-mlu370
-          ref: ${{ env.OVERLAY_BRANCH }}
+          ref: ${{ env.TORCH_MLU_OPS_OVERLAY_BRANCH }}
           token: ${{ secrets.CROSS_REPO_PAT }}
           path: torch_mlu_ops_src
           fetch-depth: 0

@@ -41,17 +41,17 @@
 > 修复方法：`pip install torchvision==0.25.0+cpu torchaudio==2.10.0+cpu`
 > （从 PyTorch CPU index）。本 overlay 不强制安装，避免污染用户环境。
 
-## 分类 2 — torch 2.10 上游 helper API 漂移（真 regression，进 v0.1.x）
+## 分类 2 — torch 2.10 上游 helper API 漂移（真 regression）
 
 torch 2.10 改了某些内部 helper 的 API，torch_mlu 的 monkey-patch 没跟齐：
 
-| 测试文件 | 失败 root cause |
-|---|---|
-| `torch/test_dataloader` | `_MultiProcessingDataLoaderIter._in_order` 不存在 |
-| `torch/test_pin_memory` | 同上 |
-| `torch/test_random` | `ValueError: Overflow when unpacking long long`（`torch.manual_seed` 范围检查变化） |
-| `cpp_extension/test_mlu_extension` | 测试自身 reference `torch._C._PYBIND11_COMPILER_TYPE`（torch 2.10 已移除） |
-| `utils/test_monkey_patch_ref_leak` | `__eq__()` 签名兼容性 |
+| 测试文件 | 失败 root cause | 修复版本 |
+|---|---|---|
+| `torch/test_dataloader` | `_MultiProcessingDataLoaderIter._in_order` 不存在 | ✅ v0.1.1 |
+| `torch/test_pin_memory` | 同上 | ✅ v0.1.1 |
+| `torch/test_random` | `ValueError: Overflow when unpacking long long`（`torch.manual_seed` 范围检查变化） | v0.1.x |
+| `cpp_extension/test_mlu_extension` | 测试自身 reference `torch._C._PYBIND11_COMPILER_TYPE`（torch 2.10 已移除） | v0.1.x |
+| `utils/test_monkey_patch_ref_leak` | 测试与 torch_mlu hijack 设计本身矛盾（不容易解） | 评估中 |
 
 ## 分类 3 — torch 2.10 profiler 大改（v0.3 重做适配）
 
@@ -104,21 +104,21 @@ torch 2.10 的 foreach 注册路径与 torch_mlu 当前桥接不匹配：
 - `distributed/test_distributed`（`master_addr is None`）
 - `multiprocessing/test_multiprocessing`（同上）
 
-## 分类 8 — torch_ops 异常路径文本不匹配（cosmetic，进 v0.1.x）
+## 分类 8 — torch_ops 异常路径文本不匹配（cosmetic）
 
 torch 2.10 改了少数 error message 字符串，测试用 `assertRaisesRegex`
 来检查的就会 fail。**算子本身计算路径没问题**：
 
-| 测试文件 | 类别 |
-|---|---|
-| `test_slice` | `assertRaisesRegex` 期望文本变了 |
-| `test_softshrink` | 同上 |
-| `test_topk` | 同上 |
-| `test_gather` | 同上 |
-| `test_dot` | 设备 mismatch 检查 |
-| `test_sparse_coo_tensor` | 设备 mismatch 检查 |
-| `test_addmm` | 数值容差 marginal（`0.0031 > 0.003`） |
-| `test__transform_bias_rescale_qkv` | 大 tensor edge case |
+| 测试文件 | 类别 | 修复版本 |
+|---|---|---|
+| `test_slice` | `assertRaisesRegex` 期望文本变了 | ✅ v0.1.1 |
+| `test_softshrink` | 同上 | ✅ v0.1.1 |
+| `test_topk` | 同上 | ✅ v0.1.1 |
+| `test_gather` | 同上 | ✅ v0.1.1 |
+| `test_dot` | 设备 mismatch 检查 | ✅ v0.1.1 |
+| `test_sparse_coo_tensor` | 设备 mismatch 检查 | ✅ v0.1.1 |
+| `test_addmm` | 数值容差 marginal（`0.0031 > 0.003`） | v0.1.x |
+| `test__transform_bias_rescale_qkv` | 大 tensor edge case | v0.1.x |
 
 ## 分类 9 — 性能 regression / 算法慢路径（5 个 TIMEOUT，进 v0.1.x）
 
