@@ -60,14 +60,18 @@ python tests/smoke_batch_matmul.py
 
 1. Sanity-checks that the running container is a Cambricon
    `torch_mlu 1.24.1 + torch 2.5.0` base.
-2. Backs up `site-packages/torch_mlu/` and the live
-   `/workspace/torch_mlu_ops-v1.3.2/` source tree.
+2. Backs up `site-packages/{torch_mlu, torch_mlu_ops}` and the
+   `/torch/src/torch_mlu/` + `/workspace/torch_mlu_ops-v1.3.2/`
+   source trees.
 3. `pip install torch==2.10.0+cpu` from the official PyTorch CPU index.
-4. Applies our `patches/torch_mlu/*.patch` to the live `site-packages`.
-5. Applies our `patches/torch_mlu_ops/*.patch` to the source tree and
-   triggers `python setup.py build_ext --inplace` to rebuild
-   `_C.cpython-310-x86_64-linux-gnu.so` against the new ABI.
-6. Reinstalls the rebuilt `torch_mlu_ops` into `site-packages`.
+4. Applies `patches/torch_mlu/*.patch` to `/torch/src/torch_mlu/`.
+5. `python setup.py build_ext --inplace` inside that source tree
+   rebuilds `torch_mlu` C++ libraries for the torch 2.10 ABI.
+6. Syncs the rebuilt `.so` files and patched `.py` files back into
+   `site-packages/torch_mlu`.
+7. Applies `patches/torch_mlu_ops/*.patch` to its source tree and
+   rebuilds `torch_mlu_ops/_C.so` against the new ABI.
+8. Drops the rebuilt `torch_mlu_ops` artifacts into `site-packages`.
 
 Rollback: `bash scripts/rollback.sh` restores the original state from
 the backup created in step 2.

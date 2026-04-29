@@ -51,12 +51,16 @@ python tests/smoke_batch_matmul.py
 `apply.sh` 做以下事情：
 
 1. 校验当前容器确实是寒武纪 `torch_mlu 1.24.1 + torch 2.5.0` 基础镜像
-2. 备份 `site-packages/torch_mlu/` 和 `/workspace/torch_mlu_ops-v1.3.2/` 源码树
+2. 备份 `site-packages/torch_mlu` / `site-packages/torch_mlu_ops`
+   和 `/torch/src/torch_mlu/` / `/workspace/torch_mlu_ops-v1.3.2/` 源码树
 3. `pip install torch==2.10.0+cpu`（PyTorch 官方 CPU index）
-4. 把 `patches/torch_mlu/*.patch` 应用到 `site-packages` 中的 `torch_mlu`
-5. 把 `patches/torch_mlu_ops/*.patch` 应用到源码树，
-   并执行 `python setup.py build_ext --inplace` 在新 ABI 上重编 `_C.so`
-6. 把重编出来的 `torch_mlu_ops` 装回 `site-packages`
+4. 把 `patches/torch_mlu/*.patch` 应用到 `/torch/src/torch_mlu/`
+5. 在 `/torch/src/torch_mlu/` 下 `python setup.py build_ext --inplace`
+   重新编译 `torch_mlu` C++ 部分（针对新 torch 2.10 ABI）
+6. 把重编出来的 `.so` 与已 patch 的 `.py` 同步到 `site-packages/torch_mlu`
+7. 把 `patches/torch_mlu_ops/*.patch` 应用到 torch_mlu_ops 源码树，
+   并 `python setup.py build_ext --inplace` 重新编译 `_C.so`
+8. 把重编出来的 `torch_mlu_ops` 装回 `site-packages`
 
 回滚：`bash scripts/rollback.sh <备份目录>` 即可还原到原始状态
 （备份目录路径在 apply 完成后会打印出来）。
